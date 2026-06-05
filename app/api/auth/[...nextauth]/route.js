@@ -20,9 +20,6 @@ export const authOptions = {
       },
     }),
   ],
-  pages: {
-    signIn: "/",
-  },
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
