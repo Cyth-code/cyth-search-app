@@ -26,8 +26,21 @@ export default function Home() {
   const [indexMsg, setIndexMsg]       = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [selectedSources, setSelectedSources] = useState(["onenote","outlook","teams"]);
+  const [theme, setTheme] = useState("light");
   const inputRef   = useRef(null);
   const debounceRef = useRef(null);
+
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("cyth-theme") : null;
+    if (saved === "light" || saved === "dark") setTheme(saved);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("cyth-theme", theme);
+    }
+  }, [theme]);
 
   useEffect(() => {
     if (session) {
@@ -89,6 +102,8 @@ export default function Home() {
     );
   };
 
+  const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
+
   const highlight = (text, q) => {
     if (!q || !text) return text || "";
     const terms = q.split(/\s+/).filter(Boolean);
@@ -101,15 +116,25 @@ export default function Home() {
 
   const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+  const Brand = () => (
+    <>
+      <CythLogo />
+      <span className="hbrand">Cyth <span className="accent">Search</span></span>
+    </>
+  );
+
   if (status === "loading") return (
     <div className="center-screen"><div className="spinner" /></div>
   );
 
   if (!session) return (
     <div className="center-screen">
+      <button className="theme-toggle floating" onClick={toggleTheme} aria-label="Toggle theme">
+        {theme === "light" ? "🌙" : "☀️"}
+      </button>
       <div className="auth-card">
-        <div className="auth-logo">⬡</div>
-        <h1>M365<span className="accent">Search</span></h1>
+        <div className="auth-logo"><CythLogo size={52} /></div>
+        <h1>Cyth <span className="accent">Search</span></h1>
         <p className="tagline">AI-powered search across OneNote, Outlook & Teams — including text inside images</p>
         <div className="source-pills">
           <span>📓 OneNote</span><span>📧 Outlook</span><span>💬 Teams</span>
@@ -118,6 +143,7 @@ export default function Home() {
           <MicrosoftLogo /> Sign in with Microsoft
         </button>
       </div>
+      <style>{globalStyles}</style>
     </div>
   );
 
@@ -129,17 +155,18 @@ export default function Home() {
     <div className="app">
       <header>
         <div className="header-left">
-          <span className="hlogo">⬡</span>
-          <span className="hbrand">M365<span className="accent">Search</span></span>
+          <Brand />
         </div>
         <div className="header-right">
+          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme" title="Toggle theme">
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
           <span className="huser">{session.user?.name}</span>
           <button className="btn-ghost" onClick={() => signOut()}>Sign out</button>
         </div>
       </header>
 
       <main>
-        {/* Search input */}
         <div className="search-row">
           <div className="search-box">
             <SearchIcon />
@@ -155,7 +182,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Index controls */}
         <div className="controls-row">
           <div className="source-toggles">
             {INDEX_SOURCES.map(s => (
@@ -177,7 +203,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Index stats */}
         {indexStats?.total > 0 && (
           <div className="stats-bar">
             <span className="stats-total">{indexStats.total} items indexed</span>
@@ -192,7 +217,6 @@ export default function Home() {
 
         {indexMsg && <div className="index-msg">{indexMsg}</div>}
 
-        {/* Source filter tabs */}
         {results.length > 0 && (
           <div className="source-tabs">
             {SOURCES.map(s => {
@@ -214,7 +238,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Results */}
         {filteredResults.length > 0 && (
           <div className="results">
             {filteredResults.map(r => (
@@ -263,98 +286,130 @@ export default function Home() {
         )}
       </main>
 
-      <style>{`
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Segoe UI',system-ui,sans-serif;background:#080810;color:#e0e0f0;min-height:100vh}
-
-        .center-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#080810}
-
-        .auth-card{text-align:center;padding:56px 48px;background:#101018;border:1px solid #222238;border-radius:24px;max-width:440px;width:90%}
-        .auth-logo{font-size:52px;color:#6c63ff;margin-bottom:20px}
-        h1{font-size:34px;font-weight:800;letter-spacing:-1.5px;color:#fff}
-        .accent{color:#6c63ff}
-        .tagline{margin:12px 0 24px;color:#777;font-size:15px;line-height:1.6}
-        .source-pills{display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
-        .source-pills span{background:#1a1a2e;border:1px solid #2a2a45;padding:6px 14px;border-radius:20px;font-size:13px;color:#aaa}
-        .ms-btn{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#222;border:none;padding:13px 26px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s}
-        .ms-btn:hover{opacity:.9}
-
-        header{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid #151525;background:#0c0c18;position:sticky;top:0;z-index:10}
-        .header-left,.header-right{display:flex;align-items:center;gap:10px}
-        .hlogo{font-size:22px;color:#6c63ff}
-        .hbrand{font-size:18px;font-weight:800;letter-spacing:-0.5px;color:#fff}
-        .huser{color:#666;font-size:13px}
-        .btn-ghost{background:none;border:1px solid #222238;color:#666;padding:5px 12px;border-radius:6px;font-size:13px;cursor:pointer;transition:all .2s}
-        .btn-ghost:hover{border-color:#6c63ff;color:#6c63ff}
-
-        main{max-width:800px;margin:0 auto;padding:36px 24px}
-
-        .search-row{margin-bottom:16px}
-        .search-box{display:flex;align-items:center;gap:12px;background:#101018;border:1.5px solid #1e1e35;border-radius:14px;padding:14px 18px;transition:border-color .2s}
-        .search-box:focus-within{border-color:#6c63ff;box-shadow:0 0 0 3px rgba(108,99,255,.12)}
-        .search-input{flex:1;background:none;border:none;outline:none;color:#e0e0f0;font-size:16px;font-family:inherit}
-        .search-input::placeholder{color:#3a3a55}
-
-        .controls-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-        .source-toggles{display:flex;gap:8px;flex-wrap:wrap}
-        .toggle-btn{background:#101018;border:1px solid #1e1e35;color:#666;padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;transition:all .2s}
-        .toggle-btn.active{background:#1a1830;border-color:#6c63ff;color:#a09af0}
-        .index-btn{background:#1a1830;border:1px solid #2a2a45;color:#9090cc;padding:7px 16px;border-radius:8px;font-size:13px;cursor:pointer;transition:all .2s;white-space:nowrap}
-        .index-btn:hover:not(:disabled){border-color:#6c63ff;color:#6c63ff}
-        .index-btn:disabled{opacity:.5;cursor:not-allowed}
-
-        .stats-bar{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12px;color:#555;flex-wrap:wrap;margin-bottom:8px}
-        .stats-total{color:#777;font-weight:600}
-        .stats-pill{background:#1a1a2e;border:1px solid #222238;padding:2px 10px;border-radius:12px;color:#666}
-        .stats-time{margin-left:auto;color:#444}
-
-        .index-msg{background:#101018;border:1px solid #1e1e35;border-radius:8px;padding:12px 16px;color:#777;font-size:14px;margin-bottom:16px}
-
-        .source-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #151525;padding-bottom:0}
-        .tab{background:none;border:none;color:#555;padding:10px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;border-radius:6px 6px 0 0}
-        .tab:hover{color:#9090cc}
-        .tab.active{color:#a09af0;border-bottom-color:#6c63ff}
-        .tab-count{background:#1a1a2e;color:#666;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:6px}
-
-        .results{display:flex;flex-direction:column;gap:10px}
-        .result-card{display:block;background:#101018;border:1px solid #1a1a30;border-radius:12px;padding:16px 20px;text-decoration:none;color:inherit;transition:all .2s}
-        .result-card:hover{border-color:#6c63ff;background:#12121e;transform:translateY(-1px);box-shadow:0 4px 20px rgba(108,99,255,.1)}
-
-        .result-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-        .source-badge{font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600}
-        .source-badge[data-source="OneNote"]{background:rgba(126,87,194,.2);color:#b39ddb}
-        .source-badge[data-source="Outlook"]{background:rgba(2,136,209,.2);color:#81d4fa}
-        .source-badge[data-source="Teams"]{background:rgba(94,53,177,.2);color:#ce93d8}
-        .source-badge[data-source="Teams Chat"]{background:rgba(94,53,177,.2);color:#ce93d8}
-        .img-badge{font-size:11px;background:rgba(108,99,255,.15);color:#9090d0;padding:3px 8px;border-radius:4px}
-
-        .result-title{font-size:15px;font-weight:600;color:#e0e0f0;margin-bottom:3px}
-        .result-title mark{background:rgba(108,99,255,.25);color:#c0b8ff;border-radius:2px;padding:0 1px}
-        .result-meta{font-size:12px;color:#444;margin-bottom:8px}
-        .result-snippet{font-size:13px;color:#666;line-height:1.55;margin-bottom:10px}
-        .result-snippet mark{background:rgba(108,99,255,.18);color:#a0a0e0;border-radius:2px}
-
-        .result-footer{display:flex;justify-content:space-between;font-size:11px;color:#333}
-        .open-link{color:#5550a0}
-        .result-card:hover .open-link{color:#9090d0}
-
-        .empty{text-align:center;padding:60px 24px;color:#444}
-        .empty-icon{font-size:36px;margin-bottom:16px;color:#222}
-        .empty p{font-size:15px;margin-bottom:8px;color:#555}
-        .hint{font-size:13px;color:#3a3a55}
-
-        .spinner{width:40px;height:40px;border:3px solid #1e1e35;border-top-color:#6c63ff;border-radius:50%;animation:spin .8s linear infinite}
-        .spinner-sm{width:16px;height:16px;border:2px solid #1e1e35;border-top-color:#6c63ff;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
-        @keyframes spin{to{transform:rotate(360deg)}}
-      `}</style>
+      <style>{globalStyles}</style>
     </div>
   );
 }
 
+const globalStyles = `
+  :root, [data-theme="light"]{
+    --bg:#ffffff; --surface:#ffffff; --surface-2:#f7f7f9; --surface-hover:#fafafc;
+    --border:#e6e6ec; --border-strong:#d0d0d8;
+    --text:#1a1a1f; --text-muted:#5a5a66; --text-faint:#8a8a96; --text-dim:#b0b0b8;
+    --accent:#c8102e; --accent-hover:#a30d24; --accent-soft:rgba(200,16,46,.08); --accent-ring:rgba(200,16,46,.18);
+    --shadow:0 4px 20px rgba(200,16,46,.08);
+    --ms-btn-bg:#1a1a1f; --ms-btn-text:#ffffff;
+  }
+  [data-theme="dark"]{
+    --bg:#080810; --surface:#101018; --surface-2:#0c0c18; --surface-hover:#12121e;
+    --border:#1e1e35; --border-strong:#2a2a45;
+    --text:#e0e0f0; --text-muted:#9090a0; --text-faint:#666; --text-dim:#444;
+    --accent:#ff4d6d; --accent-hover:#ff6b85; --accent-soft:rgba(255,77,109,.12); --accent-ring:rgba(255,77,109,.18);
+    --shadow:0 4px 20px rgba(255,77,109,.10);
+    --ms-btn-bg:#ffffff; --ms-btn-text:#222;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text)}
+  body{font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;transition:background .2s,color .2s}
+
+  .center-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative}
+
+  .auth-card{text-align:center;padding:56px 48px;background:var(--surface);border:1px solid var(--border);border-radius:24px;max-width:440px;width:90%;box-shadow:var(--shadow)}
+  .auth-logo{margin-bottom:20px;display:flex;justify-content:center}
+  h1{font-size:34px;font-weight:800;letter-spacing:-1.5px;color:var(--text)}
+  .accent{color:var(--accent)}
+  .tagline{margin:12px 0 24px;color:var(--text-muted);font-size:15px;line-height:1.6}
+  .source-pills{display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
+  .source-pills span{background:var(--surface-2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:13px;color:var(--text-muted)}
+  .ms-btn{display:inline-flex;align-items:center;gap:10px;background:var(--ms-btn-bg);color:var(--ms-btn-text);border:none;padding:13px 26px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s}
+  .ms-btn:hover{opacity:.9}
+
+  .theme-toggle{background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);width:34px;height:34px;border-radius:8px;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s}
+  .theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
+  .theme-toggle.floating{position:absolute;top:20px;right:20px}
+
+  header{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:var(--surface-2);position:sticky;top:0;z-index:10}
+  .header-left,.header-right{display:flex;align-items:center;gap:10px}
+  .hbrand{font-size:18px;font-weight:800;letter-spacing:-0.5px;color:var(--text)}
+  .huser{color:var(--text-muted);font-size:13px}
+  .btn-ghost{background:none;border:1px solid var(--border);color:var(--text-muted);padding:5px 12px;border-radius:6px;font-size:13px;cursor:pointer;transition:all .2s}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  main{max-width:800px;margin:0 auto;padding:36px 24px}
+
+  .search-row{margin-bottom:16px}
+  .search-box{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:14px 18px;transition:border-color .2s,box-shadow .2s}
+  .search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+  .search-input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:16px;font-family:inherit}
+  .search-input::placeholder{color:var(--text-dim)}
+
+  .controls-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .source-toggles{display:flex;gap:8px;flex-wrap:wrap}
+  .toggle-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;transition:all .2s}
+  .toggle-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .index-btn{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .index-btn:hover:not(:disabled){background:var(--accent);color:#fff}
+  .index-btn:disabled{opacity:.5;cursor:not-allowed}
+
+  .stats-bar{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12px;color:var(--text-faint);flex-wrap:wrap;margin-bottom:8px}
+  .stats-total{color:var(--text-muted);font-weight:600}
+  .stats-pill{background:var(--surface-2);border:1px solid var(--border);padding:2px 10px;border-radius:12px;color:var(--text-muted)}
+  .stats-time{margin-left:auto;color:var(--text-dim)}
+
+  .index-msg{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text-muted);font-size:14px;margin-bottom:16px}
+
+  .source-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0}
+  .tab{background:none;border:none;color:var(--text-faint);padding:10px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;border-radius:6px 6px 0 0}
+  .tab:hover{color:var(--accent)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab-count{background:var(--surface-2);color:var(--text-muted);font-size:11px;padding:1px 6px;border-radius:10px;margin-left:6px}
+
+  .results{display:flex;flex-direction:column;gap:10px}
+  .result-card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-decoration:none;color:inherit;transition:all .2s}
+  .result-card:hover{border-color:var(--accent);background:var(--surface-hover);transform:translateY(-1px);box-shadow:var(--shadow)}
+
+  .result-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .source-badge{font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;background:var(--surface-2);color:var(--text-muted)}
+  .source-badge[data-source="OneNote"]{background:var(--accent-soft);color:var(--accent)}
+  .source-badge[data-source="Outlook"]{background:var(--accent-soft);color:var(--accent)}
+  .source-badge[data-source="Teams"]{background:var(--accent-soft);color:var(--accent)}
+  .source-badge[data-source="Teams Chat"]{background:var(--accent-soft);color:var(--accent)}
+  .img-badge{font-size:11px;background:var(--accent-soft);color:var(--accent);padding:3px 8px;border-radius:4px}
+
+  .result-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px}
+  .result-title mark{background:var(--accent-soft);color:var(--accent);border-radius:2px;padding:0 1px}
+  .result-meta{font-size:12px;color:var(--text-faint);margin-bottom:8px}
+  .result-snippet{font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:10px}
+  .result-snippet mark{background:var(--accent-soft);color:var(--accent);border-radius:2px}
+
+  .result-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim)}
+  .open-link{color:var(--accent)}
+  .result-card:hover .open-link{color:var(--accent-hover)}
+
+  .empty{text-align:center;padding:60px 24px;color:var(--text-faint)}
+  .empty-icon{font-size:36px;margin-bottom:16px;color:var(--text-dim)}
+  .empty p{font-size:15px;margin-bottom:8px;color:var(--text-muted)}
+  .hint{font-size:13px;color:var(--text-dim)}
+
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  .spinner-sm{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+`;
+
 function SearchIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3a3a55" strokeWidth="2.5" style={{flexShrink:0}}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{flexShrink:0,color:"var(--text-dim)"}}>
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+  );
+}
+
+function CythLogo({ size = 26 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" style={{flexShrink:0}}>
+      <path d="M16 2 L29 9.5 V22.5 L16 30 L3 22.5 V9.5 Z" fill="var(--accent)" />
+      <text x="16" y="21" textAnchor="middle" fontSize="14" fontWeight="800" fill="#fff" fontFamily="Segoe UI, sans-serif">C</text>
     </svg>
   );
 }

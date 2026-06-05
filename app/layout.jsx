@@ -3,7 +3,7 @@ import { authOptions } from "./api/auth/[...nextauth]/route";
 import SessionProvider from "./components/SessionProvider";
 
 export const metadata = {
-  title: "M365 AI Search",
+  title: "Cyth Search App",
   description: "AI-powered search across OneNote, Outlook & Teams",
 };
 
