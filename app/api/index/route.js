@@ -18,6 +18,7 @@ export async function POST(req) {
 
   const { sources = ["onenote", "outlook", "teams"] } = await req.json().catch(() => ({}));
   const token = session.accessToken;
+  const userId = (session.user?.email || session.user?.name || "anon").toLowerCase();
   const allRecords = [];
 
   if (sources.includes("onenote")) {
@@ -97,8 +98,7 @@ export async function POST(req) {
     }
   }
 
-  setIndex(allRecords);
-  const stats = getIndexStats();
+  const stats = await setIndex(userId, allRecords);
 
   return Response.json({
     success: true,
@@ -108,5 +108,8 @@ export async function POST(req) {
 }
 
 export async function GET() {
-  return Response.json(getIndexStats());
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return Response.json({ total: 0, lastIndexed: null, summary: {} });
+  const userId = (session.user?.email || session.user?.name || "anon").toLowerCase();
+  return Response.json(await getIndexStats(userId));
 }

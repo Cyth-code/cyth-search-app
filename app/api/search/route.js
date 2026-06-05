@@ -6,13 +6,14 @@ export async function GET(req) {
   const session = await getServerSession(authOptions);
   if (!session) return Response.json({ error: "Not authenticated" }, { status: 401 });
 
+  const userId = (session.user?.email || session.user?.name || "anon").toLowerCase();
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q") || "";
   const sources = searchParams.get("sources")?.split(",").filter(Boolean) || [];
   const limit = parseInt(searchParams.get("limit") || "30");
 
-  if (!query.trim()) return Response.json({ results: [], stats: getIndexStats() });
+  if (!query.trim()) return Response.json({ results: [], stats: await getIndexStats(userId) });
 
-  const results = search(query, { sources, limit });
-  return Response.json({ results, stats: getIndexStats(), query });
+  const results = await search(userId, query, { sources, limit });
+  return Response.json({ results, stats: await getIndexStats(userId), query });
 }
