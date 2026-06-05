@@ -10,25 +10,19 @@ export const authOptions = {
       authorization: {
         params: {
           scope: [
-            "openid",
-            "profile",
-            "email",
-            "offline_access",
-            // OneNote
-            "Notes.Read",
-            "Notes.Read.All",
-            // Outlook
+            "openid", "profile", "email", "offline_access",
+            "Notes.Read", "Notes.Read.All",
             "Mail.Read",
-            // Teams
-            "Chat.Read",
-            "ChannelMessage.Read.All",
-            // User
+            "Chat.Read", "ChannelMessage.Read.All",
             "User.Read",
           ].join(" "),
         },
       },
     }),
   ],
+  pages: {
+    signIn: "/",
+  },
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
